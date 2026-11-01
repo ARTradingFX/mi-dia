@@ -844,9 +844,30 @@ canvas { max-width:100%; }
   <div style="max-width:340px;width:100%;text-align:center">
     <div style="font-family:var(--display);font-size:13px;letter-spacing:.25em;color:var(--gold);margin-bottom:4px">AR TRADING</div>
     <div style="font-family:var(--display);font-size:36px;font-weight:700;color:var(--fg);letter-spacing:.08em;margin-bottom:6px">MI DÍA</div>
-    <div style="color:var(--muted);font-size:14px;margin-bottom:36px">Tu planificador diario personal</div>
+    <div style="color:var(--muted);font-size:14px;margin-bottom:24px">Tu planificador diario personal</div>
 
-    <button onclick="signInWithGoogle()" id="loginBtn" style="display:flex;align-items:center;justify-content:center;gap:12px;width:100%;padding:14px 20px;background:var(--panel);border:1px solid var(--line-2);border-radius:var(--r);cursor:pointer;color:var(--fg);font-family:var(--body);font-size:15px;font-weight:500;transition:border-color .2s,background .2s">
+    <!-- Email/password form -->
+    <div style="text-align:left;margin-bottom:16px">
+      <input id="authEmail" type="email" placeholder="Email" autocomplete="email"
+        style="width:100%;padding:12px 14px;background:var(--panel);border:1px solid var(--line-2);border-radius:var(--r);color:var(--fg);font-family:var(--body);font-size:15px;margin-bottom:10px;outline:none;box-sizing:border-box">
+      <input id="authPass" type="password" placeholder="Contraseña" autocomplete="current-password"
+        style="width:100%;padding:12px 14px;background:var(--panel);border:1px solid var(--line-2);border-radius:var(--r);color:var(--fg);font-family:var(--body);font-size:15px;margin-bottom:12px;outline:none;box-sizing:border-box">
+      <div style="display:flex;gap:8px">
+        <button onclick="emailLogin()" style="flex:1;padding:12px;background:var(--gold);border:none;border-radius:var(--r);cursor:pointer;color:var(--gold-ink);font-family:var(--body);font-size:15px;font-weight:600">Entrar</button>
+        <button onclick="emailRegister()" style="flex:1;padding:12px;background:var(--panel);border:1px solid var(--line-2);border-radius:var(--r);cursor:pointer;color:var(--fg);font-family:var(--body);font-size:15px">Registrarse</button>
+      </div>
+      <button onclick="forgotPassword()" style="width:100%;margin-top:8px;padding:8px;background:none;border:none;cursor:pointer;color:var(--muted);font-family:var(--body);font-size:13px">¿Olvidaste tu contraseña?</button>
+    </div>
+
+    <!-- Divider -->
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+      <div style="flex:1;height:1px;background:var(--line)"></div>
+      <span style="color:var(--dim);font-size:12px">o</span>
+      <div style="flex:1;height:1px;background:var(--line)"></div>
+    </div>
+
+    <!-- Google -->
+    <button onclick="signInWithGoogle()" id="loginBtn" style="display:flex;align-items:center;justify-content:center;gap:12px;width:100%;padding:13px 20px;background:var(--panel);border:1px solid var(--line-2);border-radius:var(--r);cursor:pointer;color:var(--fg);font-family:var(--body);font-size:15px;font-weight:500;transition:border-color .2s,background .2s">
       <svg width="20" height="20" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"/><path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"/><path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"/><path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571c0.001-0.001,0.002-0.001,0.003-0.002l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z"/></svg>
       Continuar con Google
     </button>
@@ -938,6 +959,52 @@ function saveState() {
   }, 1500);
 }
 
+// ── AUTH EMAIL/PASS ───────────────────────────────────────
+function showLoginError(msg) {
+  const el = document.getElementById('loginError');
+  el.textContent = msg; el.style.display = 'block';
+}
+function emailLogin() {
+  const email = document.getElementById('authEmail').value.trim();
+  const pass  = document.getElementById('authPass').value;
+  if (!email || !pass) { showLoginError('Introduce email y contraseña'); return; }
+  auth.signInWithEmailAndPassword(email, pass).catch(err => {
+    const msgs = {
+      'auth/user-not-found': 'No existe una cuenta con ese email',
+      'auth/wrong-password': 'Contraseña incorrecta',
+      'auth/invalid-email': 'Email no válido',
+      'auth/too-many-requests': 'Demasiados intentos. Espera un momento.'
+    };
+    showLoginError(msgs[err.code] || err.message);
+  });
+}
+function emailRegister() {
+  const email = document.getElementById('authEmail').value.trim();
+  const pass  = document.getElementById('authPass').value;
+  if (!email || !pass) { showLoginError('Introduce email y contraseña'); return; }
+  if (pass.length < 6) { showLoginError('La contraseña debe tener al menos 6 caracteres'); return; }
+  auth.createUserWithEmailAndPassword(email, pass).catch(err => {
+    const msgs = {
+      'auth/email-already-in-use': 'Ya existe una cuenta con ese email. Usa "Entrar".',
+      'auth/invalid-email': 'Email no válido',
+      'auth/weak-password': 'Contraseña demasiado débil (mín. 6 caracteres)'
+    };
+    showLoginError(msgs[err.code] || err.message);
+  });
+}
+function forgotPassword() {
+  const email = document.getElementById('authEmail').value.trim();
+  if (!email) { showLoginError('Introduce tu email primero'); return; }
+  auth.sendPasswordResetEmail(email).then(() => {
+    const el = document.getElementById('loginError');
+    el.style.background = 'rgba(79,209,127,.12)';
+    el.style.borderColor = 'rgba(79,209,127,.3)';
+    el.style.color = 'var(--up)';
+    el.textContent = 'Email de recuperación enviado. Revisa tu bandeja.';
+    el.style.display = 'block';
+  }).catch(err => showLoginError(err.message));
+}
+
 // ── AUTH ──────────────────────────────────────────────────
 function showLogin() {
   document.getElementById('loginScreen').style.display = 'flex';
@@ -953,17 +1020,18 @@ function showApp() {
   document.querySelector('.app').style.display = 'grid';
 }
 
-function isMobileSafari() {
-  const ua = navigator.userAgent;
-  return /iP(ad|hone|od)/.test(ua) && /WebKit/.test(ua) && !/CriOS/.test(ua) && !/FxiOS/.test(ua);
+function isStandalone() {
+  return window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches;
 }
 function signInWithGoogle() {
   const btn = document.getElementById('loginBtn');
   btn.disabled = true;
   btn.style.opacity = '0.6';
   const provider = new firebase.auth.GoogleAuthProvider();
-  if (isMobileSafari()) {
-    // Safari en iOS bloquea popups de terceros — usar redirect
+  if (isStandalone()) {
+    // En modo PWA instalada, el redirect y el popup fallan en Safari iOS.
+    // Abrimos la URL de auth en Safari normal mediante un token personalizado.
+    // Workaround: redirigir toda la pestaña a la URL de sign-in de Google via Firebase redirect
     auth.signInWithRedirect(provider);
   } else {
     auth.signInWithPopup(provider).catch(err => {
@@ -975,8 +1043,10 @@ function signInWithGoogle() {
     });
   }
 }
-// Capturar resultado del redirect (Safari iOS)
-auth.getRedirectResult().catch(err => {
+// Capturar resultado del redirect
+auth.getRedirectResult().then(result => {
+  // onAuthStateChanged lo maneja; nada extra necesario
+}).catch(err => {
   if (err && err.code && err.code !== 'auth/no-auth-event') {
     const errEl = document.getElementById('loginError');
     if (errEl) { errEl.textContent = 'Error: ' + err.message; errEl.style.display = 'block'; }

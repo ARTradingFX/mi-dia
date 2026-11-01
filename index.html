@@ -953,19 +953,35 @@ function showApp() {
   document.querySelector('.app').style.display = 'grid';
 }
 
+function isMobileSafari() {
+  const ua = navigator.userAgent;
+  return /iP(ad|hone|od)/.test(ua) && /WebKit/.test(ua) && !/CriOS/.test(ua) && !/FxiOS/.test(ua);
+}
 function signInWithGoogle() {
   const btn = document.getElementById('loginBtn');
   btn.disabled = true;
   btn.style.opacity = '0.6';
   const provider = new firebase.auth.GoogleAuthProvider();
-  auth.signInWithPopup(provider).catch(err => {
-    const errEl = document.getElementById('loginError');
-    errEl.textContent = 'Error: ' + err.message;
-    errEl.style.display = 'block';
-    btn.disabled = false;
-    btn.style.opacity = '1';
-  });
+  if (isMobileSafari()) {
+    // Safari en iOS bloquea popups de terceros — usar redirect
+    auth.signInWithRedirect(provider);
+  } else {
+    auth.signInWithPopup(provider).catch(err => {
+      const errEl = document.getElementById('loginError');
+      errEl.textContent = 'Error: ' + err.message;
+      errEl.style.display = 'block';
+      btn.disabled = false;
+      btn.style.opacity = '1';
+    });
+  }
 }
+// Capturar resultado del redirect (Safari iOS)
+auth.getRedirectResult().catch(err => {
+  if (err && err.code && err.code !== 'auth/no-auth-event') {
+    const errEl = document.getElementById('loginError');
+    if (errEl) { errEl.textContent = 'Error: ' + err.message; errEl.style.display = 'block'; }
+  }
+});
 
 function signOut() {
   auth.signOut();

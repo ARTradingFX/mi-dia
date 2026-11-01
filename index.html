@@ -957,10 +957,8 @@ function signInWithGoogle() {
   const btn = document.getElementById('loginBtn');
   btn.disabled = true;
   btn.style.opacity = '0.6';
-  btn.textContent = 'Redirigiendo...';
   const provider = new firebase.auth.GoogleAuthProvider();
-  // Use redirect (more reliable in iframes/artifacts than popup)
-  auth.signInWithRedirect(provider).catch(err => {
+  auth.signInWithPopup(provider).catch(err => {
     const errEl = document.getElementById('loginError');
     errEl.textContent = 'Error: ' + err.message;
     errEl.style.display = 'block';
@@ -972,14 +970,6 @@ function signInWithGoogle() {
 function signOut() {
   auth.signOut();
 }
-
-// Handle redirect result on page load
-auth.getRedirectResult().catch(err => {
-  if (err.code !== 'auth/no-auth-event') {
-    const errEl = document.getElementById('loginError');
-    if (errEl) { errEl.textContent = 'Error: ' + err.message; errEl.style.display = 'block'; }
-  }
-});
 
 auth.onAuthStateChanged(async user => {
   if (user) {
